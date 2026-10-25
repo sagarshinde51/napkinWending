@@ -95,7 +95,7 @@ with col_logout:
         st.rerun()
 
 # -------------------------------------------------------------
-# USER DASHBOARD (User Login View)
+# USER DASHBOARD
 # -------------------------------------------------------------
 if st.session_state.role == "user":
     u = st.session_state.user_data
@@ -129,7 +129,7 @@ if st.session_state.role == "user":
         st.error(f"Database error: {err}")
 
 # -------------------------------------------------------------
-# ADMIN DASHBOARD (Admin Login View)
+# ADMIN DASHBOARD
 # -------------------------------------------------------------
 elif st.session_state.role == "admin":
     tab1, tab2, tab3 = st.tabs(["📜 Dispense History", "➕ Register New User", "💳 Update Balance"])
@@ -144,7 +144,7 @@ elif st.session_state.role == "admin":
         try:
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT id, DateTime, Name, RFIDNo, Mobile FROM napkinHistory ORDER BY id DESC")[cite: 2]
+            cursor.execute("SELECT id, DateTime, Name, RFIDNo, Mobile FROM napkinHistory ORDER BY id DESC")
             rows = cursor.fetchall()
             cursor.close()
             conn.close()
@@ -165,13 +165,13 @@ elif st.session_state.role == "admin":
         with st.form("create_user_form", clear_on_submit=True):
             col_u1, col_u2 = st.columns(2)
             with col_u1:
-                name = st.text_input("Full Name")[cite: 3]
-                rfid_no = st.text_input("RFID Number")[cite: 3]
-                password = st.text_input("Account Password", type="password")[cite: 3]
+                name = st.text_input("Full Name")
+                rfid_no = st.text_input("RFID Number")
+                password = st.text_input("Account Password", type="password")
             with col_u2:
-                mobile = st.text_input("Mobile Number")[cite: 3]
-                email = st.text_input("Email (Optional)")[cite: 3]
-                balance = st.number_input("Initial Balance", min_value=0, value=100, step=10)[cite: 3]
+                mobile = st.text_input("Mobile Number")
+                email = st.text_input("Email (Optional)")
+                balance = st.number_input("Initial Balance", min_value=0, value=100, step=10)
 
             submit_user = st.form_submit_button("Save User")
 
@@ -194,7 +194,7 @@ elif st.session_state.role == "admin":
                             sql = """
                             INSERT INTO NapkinUsers (Name, RFIDNo, Mobile, Email, Balance, password)
                             VALUES (%s, %s, %s, %s, %s, %s)
-                            """[cite: 3]
+                            """
                             cursor.execute(sql, (
                                 name.strip(),
                                 rfid_no.strip(),
@@ -226,21 +226,21 @@ elif st.session_state.role == "admin":
                     cursor.execute(
                         "SELECT id, Name, RFIDNo, Mobile, Balance FROM NapkinUsers WHERE Mobile = %s",
                         (search_query.strip(),)
-                    )[cite: 3]
+                    )
                 else:
                     cursor.execute(
                         "SELECT id, Name, RFIDNo, Mobile, Balance FROM NapkinUsers WHERE RFIDNo = %s",
                         (search_query.strip(),)
-                    )[cite: 3]
+                    )
                 user = cursor.fetchone()
 
                 if user:
                     st.markdown("#### User Details Found")
                     col_i1, col_i2, col_i3, col_i4 = st.columns(4)
-                    col_i1.metric("Name", user["Name"])[cite: 3]
-                    col_i2.metric("RFID", user["RFIDNo"])[cite: 3]
-                    col_i3.metric("Mobile", user["Mobile"])[cite: 3]
-                    col_i4.metric("Current Balance", user["Balance"])[cite: 3]
+                    col_i1.metric("Name", user["Name"])
+                    col_i2.metric("RFID", user["RFIDNo"])
+                    col_i3.metric("Mobile", user["Mobile"])
+                    col_i4.metric("Current Balance", user["Balance"])
 
                     st.write("---")
                     update_mode = st.radio("Balance Action", ["Add to Current Balance", "Set Direct Balance"], horizontal=True)
@@ -257,7 +257,7 @@ elif st.session_state.role == "admin":
                         cursor.execute(
                             "UPDATE NapkinUsers SET Balance = %s WHERE id = %s",
                             (str(new_bal), user["id"])
-                        )[cite: 3]
+                        )
                         conn.commit()
                         st.success(f"Balance updated successfully! New Balance: {new_bal}")
                         cursor.close()
