@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Database Connection Helper using mysql.connector
+# Database Connection Helper
 def get_db_connection():
     return mysql.connector.connect(
         host="82.180.143.66",
@@ -25,7 +25,7 @@ if "user_data" not in st.session_state:
     st.session_state.user_data = None
 
 # -------------------------------------------------------------
-# LOGIN SECTION (ADMIN OR USER)
+# LOGIN SECTION
 # -------------------------------------------------------------
 if st.session_state.role is None:
     st.title("Sanitary Napkin Dispensing and Disposing System")
@@ -77,7 +77,7 @@ if st.session_state.role is None:
                             st.rerun()
                         else:
                             st.error("Invalid RFID/Mobile number or password.")
-                    except mysql.connector.Error as err:
+                    except Exception as err:
                         st.error(f"Database error: {err}")
 
     st.stop()
@@ -95,11 +95,11 @@ with col_logout:
         st.rerun()
 
 # -------------------------------------------------------------
-# USER DASHBOARD (IF LOGGED IN AS A USER)
+# USER DASHBOARD (User Login View)
 # -------------------------------------------------------------
 if st.session_state.role == "user":
     u = st.session_state.user_data
-    st.subheader(f"👋 Welcome, {u['Name']}")
+    st.subheader(f"Welcome, {u['Name']}")
     
     col_u1, col_u2, col_u3, col_u4 = st.columns(4)
     col_u1.metric("Name", u["Name"])
@@ -125,18 +125,16 @@ if st.session_state.role == "user":
             st.dataframe(pd.DataFrame(my_history), use_container_width=True)
         else:
             st.info("No usage history found for your account.")
-    except mysql.connector.Error as err:
+    except Exception as err:
         st.error(f"Database error: {err}")
 
 # -------------------------------------------------------------
-# ADMIN DASHBOARD (IF LOGGED IN AS ADMIN)
+# ADMIN DASHBOARD (Admin Login View)
 # -------------------------------------------------------------
 elif st.session_state.role == "admin":
     tab1, tab2, tab3 = st.tabs(["📜 Dispense History", "➕ Register New User", "💳 Update Balance"])
 
-    # ---------------------------------------------------------
-    # TAB 1: HISTORY (napkinHistory)
-    # ---------------------------------------------------------
+    # TAB 1: HISTORY
     with tab1:
         st.subheader("All Dispense & Disposal History")
 
@@ -157,12 +155,10 @@ elif st.session_state.role == "admin":
                 st.caption(f"Total entries: {len(df)}")
             else:
                 st.info("No history records found in `napkinHistory`.")
-        except mysql.connector.Error as err:
+        except Exception as err:
             st.error(f"Database error: {err}")
 
-    # ---------------------------------------------------------
-    # TAB 2: CREATE USER (NapkinUsers) with password field
-    # ---------------------------------------------------------
+    # TAB 2: REGISTER USER
     with tab2:
         st.subheader("Register New User")
 
@@ -195,7 +191,6 @@ elif st.session_state.role == "admin":
                         if existing:
                             st.error("A user with this RFID Number or Mobile already exists!")
                         else:
-                            # Insert including password into NapkinUsers table
                             sql = """
                             INSERT INTO NapkinUsers (Name, RFIDNo, Mobile, Email, Balance, password)
                             VALUES (%s, %s, %s, %s, %s, %s)
@@ -209,15 +204,13 @@ elif st.session_state.role == "admin":
                                 password.strip()
                             ))
                             conn.commit()
-                            st.success(f"User '{name}' registered successfully! They can now log in using their RFID/Mobile and Password.")
+                            st.success(f"User '{name}' registered successfully!")
                         cursor.close()
                         conn.close()
-                    except mysql.connector.Error as err:
+                    except Exception as err:
                         st.error(f"Database error: {err}")
 
-    # ---------------------------------------------------------
-    # TAB 3: UPDATE BALANCE (NapkinUsers)
-    # ---------------------------------------------------------
+    # TAB 3: UPDATE BALANCE
     with tab3:
         st.subheader("Update User Balance")
 
@@ -243,4 +236,36 @@ elif st.session_state.role == "admin":
 
                 if user:
                     st.markdown("#### User Details Found")
-                    col_i1, col_
+                    col_i1, col_i2, col_i3, col_i4 = st.columns(4)
+                    col_i1.metric("Name", user["Name"])[cite: 3]
+                    col_i2.metric("RFID", user["RFIDNo"])[cite: 3]
+                    col_i3.metric("Mobile", user["Mobile"])[cite: 3]
+                    col_i4.metric("Current Balance", user["Balance"])[cite: 3]
+
+                    st.write("---")
+                    update_mode = st.radio("Balance Action", ["Add to Current Balance", "Set Direct Balance"], horizontal=True)
+                    amount = st.number_input("Amount", min_value=1, value=50, step=10)
+
+                    if st.button("Update Balance"):
+                        try:
+                            current_bal = int(user["Balance"]) if str(user["Balance"]).isdigit() else 0
+                        except ValueError:
+                            current_bal = 0
+
+                        new_bal = (current_bal + amount) if update_mode == "Add to Current Balance" else amount
+
+                        cursor.execute(
+                            "UPDATE NapkinUsers SET Balance = %s WHERE id = %s",
+                            (str(new_bal), user["id"])
+                        )[cite: 3]
+                        conn.commit()
+                        st.success(f"Balance updated successfully! New Balance: {new_bal}")
+                        cursor.close()
+                        conn.close()
+                        st.rerun()
+                else:
+                    st.warning("No user found with the provided details.")
+                    cursor.close()
+                    conn.close()
+            except Exception as err:
+                st.error(f"Database error: {err}")
